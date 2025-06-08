@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalase Sim (Simplified)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* --- Styles (Unchanged from original) --- */
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 1rem; background: linear-gradient(to right, #fff7ed, #f0f9ff); color: #374151; line-height: 1.6; min-height: 100vh; }
+    h2 { text-align: center; margin: 0.5rem 0 1rem 0; color: #1f2937; font-weight: 600; font-size: 1.25rem; }
+    .top-container { display: flex; flex-wrap: wrap; gap: 1.5rem; max-width: 1600px; margin: 1rem auto; padding: 0 1rem; }
+    .left-side { display: flex; flex-direction: column; gap: 1.5rem; flex: 1 1 800px; min-width: 300px; }
+    .right-side { display: flex; flex-direction: column; flex: 1 1 700px; gap: 1.5rem; min-width: 300px; }
+    .controls-box { background: #ffffff; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .flex-row { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; align-items: stretch; margin: 1rem 0; }
+    .input-box { display: flex; flex-direction: column; align-items: center; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #f9fafb; width: 130px; text-align: center; box-sizing: border-box; transition: border 0.3s, box-shadow 0.3s; }
+    .input-label-container { display: flex; align-items: center; justify-content: center; gap: 0.3rem; margin-bottom: 0.25rem; min-height: 24px; height: 24px; line-height: 1; }
+    .input-box label { font-weight: 600; color: #1f2937; margin: 0; font-size: 0.9rem; }
+    .molecule-icon { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
+    .icon-enzyme { background-color: #fb923c; border: 1px solid #f97316; }
+    .icon-substrate { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid #60a5fa; background-color: transparent; border-radius: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); }
+    .units { font-size: 0.8em; color: #6b7280; margin-bottom: 0.4rem; margin-top: 0.2rem; }
+    .input-box input[type="range"] { width: 100px; margin: 0.4rem 0; cursor: pointer; accent-color: #f97316; }
+    #enzymeVal, #substrateVal, #tempVal, #phVal { font-weight: 600; color: #f97316; font-size: 0.9rem; }
+    .buttons { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+    button { padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; border: none; border-radius: 0.5rem; background-color: #f97316; color: #ffffff; cursor: pointer; transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+    button:hover:not(:disabled) { background-color: #ea580c; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; background-color: #fdba74; }
+    #resetBtn { background-color: #60a5fa; } #resetBtn:hover:not(:disabled) { background-color: #3b82f6; } #resetBtn:disabled { opacity: 0.6; background-color: #60a5fa; }
+    #csvBtn { background-color: #22c55e; } #csvBtn:hover:not(:disabled) { background-color: #16a34a; }
+    .animation-container { width: 100%; aspect-ratio: 800 / 500; height: auto; max-height: 500px; position: relative; background: #ffffff; border: 1px solid #e5e7eb; overflow: hidden; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+    .graph-container, .table-container { background: #ffffff; border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .table-container { overflow-x: auto; }
+    #graphCanvas { aspect-ratio: 650 / 300; max-height: 300px; }
+    #graphCanvas { width: 100%; height: auto; background: #f9fafb; border: 1px solid #e5e7eb; display: block; border-radius: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.9rem; }
+    th, td { padding: 0.6rem 0.4rem; text-align: center; border: 1px solid #e5e7eb; }
+    thead tr:first-child th { background: #e0f2fe; color: #0c4a6e; font-weight: 600; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+    thead tr:nth-child(2) th { background: #f0f9ff; color: #374151; font-weight: normal; }
+    tbody tr:nth-child(even) { background-color: #f9fafb; }
+    .enzyme { position: absolute; width: 40px; height: 40px; background: radial-gradient(circle at 30% 30%, #fdba74, #fb923c 70%, #f97316 100%); border-radius: 50%; pointer-events: none; transition: background 0.2s, box-shadow 0.2s, border-radius 0.2s, transform 0.1s; z-index: 10; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1); }
+    .enzyme.denatured { background: radial-gradient(ellipse at 60% 40%, #d1d5db, #9ca3af 70%, #6b7280 100%); border-radius: 45% 55% 60% 40% / 55% 45% 55% 45%; transform: rotate(25deg) scale(0.95); box-shadow: inset 1px 1px 4px rgba(0,0,0,0.4); opacity: 0.8; }
+    .triangle { position: absolute; width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; pointer-events: none; z-index: 5; filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.3)); }
+    .substrate { border-bottom: 16px solid #60a5fa; }
+    .product { position: absolute; width: 8px; height: 8px; background-color: #a0d2eb; border-radius: 50%; pointer-events: none; z-index: 1; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1), 0 1px 1px rgba(0,0,0,0.1); }
+    .highlight-collision { transform: scale(1.1); box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2), 0 0 8px 4px rgba(239, 68, 68, 0.6); }
+    .input-box.keyboard-active { border-color: #f97316; box-shadow: 0 0 5px 1px #fdba74; }
+    @media (max-width: 1200px) { .left-side, .right-side { flex-basis: 100%; } .animation-container { max-height: 450px; } #graphCanvas { max-height: 280px; aspect-ratio: 600 / 300; } }
+    @media (max-width: 768px) { body { padding: 0.5rem; } .top-container { gap: 1rem; padding: 0 0.5rem; } .controls-box, .graph-container, .table-container { padding: 1rem; } .input-box { width: 120px; padding: 0.6rem; } .input-box input[type="range"] { width: 90px; } .input-label-container { min-height: 20px; height: 20px; } .input-box label { font-size: 0.85rem; } button { padding: 0.6rem 1.2rem; font-size: 0.9rem; } h2 { font-size: 1.1rem; margin-bottom: 0.75rem; } table { font-size: 0.8rem; } th, td { padding: 0.5rem 0.3rem; } #graphCanvas { max-height: 240px; aspect-ratio: 500 / 300; } }
+    @media (max-width: 480px) { .input-box { width: 100px; padding: 0.5rem; } .input-box input[type="range"] { width: 70px; } .units { font-size: 0.75em; } .input-label-container { min-height: 18px; height: 18px; } .input-box label { font-size: 0.8rem; } button { padding: 0.5rem 1rem; font-size: 0.85rem; } #graphCanvas { max-height: 200px; aspect-ratio: 400 / 300; } }
+  </style>
+</head>
+<body>
+
+    <div class="top-container">
+      <div class="left-side">
+        <div class="controls-box">
+          <h2>Set Variables</h2>
+          <div class="flex-row">
+            <div class="input-box">
+              <div class="input-label-container"> <span class="molecule-icon icon-enzyme"></span> <label>Catalase</label> </div>
+              <div class="units">(mg/mL)</div>
+              <input id="enzymeInput" type="range" min="0" max="100" step="5" value="50" oninput="sliderChange('enzyme','enzymeVal')"/>
+              <span id="enzymeVal">50</span>
+            </div>
+            <div class="input-box">
+              <div class="input-label-container"> <span class="molecule-icon icon-substrate"></span> <label>H₂O₂</label> </div>
+              <div class="units">(mM)</div>
+              <input id="substrateInput" type="range" min="0" max="800" step="20" value="100" oninput="sliderChange('substrate','substrateVal')"/>
+              <span id="substrateVal">100</span>
+            </div>
+            <div class="input-box">
+              <div class="input-label-container"> <label>Temperature</label> </div>
+              <div class="units">(°C)</div>
+              <input id="tempInput" type="range" min="0" max="60" step="1" value="37" oninput="sliderChange('temp','tempVal')"/>
+              <span id="tempVal">37</span>
+            </div>
+            <div class="input-box">
+              <div class="input-label-container"> <label>pH</label> </div>
+              <div class="units"></div>
+              <input id="phInput" type="range" min="1" max="14" step="0.1" value="9" oninput="sliderChange('ph','phVal')"/>
+              <span id="phVal">9.0</span>
+            </div>
+          </div>
+          <div class="buttons">
+            <button id="genBtn" onclick="generateResults()">Generate Results</button>
+            <button id="resetBtn" onclick="resetExperiment()">Restart</button>
+            <button id="csvBtn" onclick="exportToCSV()">Export CSV</button>
+          </div>
+        </div>
+        <div class="animation-container" id="animContainer"></div>
+
+        <div style="margin-top: 1rem; padding-bottom: 1rem;">
+            <img
+              src="https://i.postimg.cc/dtTPJLz1/Start-and-end-screen-Tw-T-Banner.png"
+              alt="TwT banner image"
+              style="width: 100%; height: 260px; border: 1px solid #ccc; display: block; object-fit: cover; object-position: center; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);"
+            />
+            <div style="font-size: 0.9em; color: #666; margin-top: 1rem; text-align: center;">
+              © B. Moran 2025
+            </div>
+          </div>
+      </div>
+      <div class="right-side">
+        <div class="graph-container">
+          <canvas id="graphCanvas"></canvas>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">Time (s)</th>
+                <th colspan="5">O₂ (ppm)</th>
+                <th rowspan="2">Mean</th>
+              </tr>
+              <tr>
+                <th>Trial 1</th>
+                <th>Trial 2</th>
+                <th>Trial 3</th>
+                <th>Trial 4</th>
+                <th>Trial 5</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+<script>
+    // --- PRNG ---
+    let seed = 12345;
+    function setSeed(newSeed) { seed = Math.floor(newSeed) % 2147483647; if (seed <= 0) seed += 2147483646; }
+    function seededRandom() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+
+    // --- Global Variables ---
+    const container = document.getElementById('animContainer');
+    let containerW = container?.clientWidth || 800;
+    let containerH = container?.clientHeight || 500;
+    let molecules = [];
+    let enzymes = [];
+    let running = false;
+    let animFrameId = null;
+    let experimentInterval = null;
+    let timeIndex = 0;
+    let resultsData = [];
+    let o2Cumulative = 0;
+    let lastO2Value = 0;
+    let experimentStartTime = 0;
+    let totalProducts = 0;
+    let slope = 0;
+    let slopeLabelText = "";
+    let reactionPossible = true;
+    let finalO2Cumulative = -1;
+    let theoreticalMaxO2 = 0;
+    let theoreticalKappa = 0.01;
+    let lastTheoreticalO2 = 0;
+    let lastO2Cumulative = 0;
+    let currentlyHoveredSlider = null;
+    let isHoveringInputBox = false;
+
+    // --- Global Constants ---
+    const Km_equiv = 20;
+    const Vmax_base_rate = 30.0;
+
+    // --- Resize ---
+    const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            if (entry.target === container) {
+                containerW = container.clientWidth;
+                containerH = container.clientHeight;
+                updateCanvasSizes();
+            }
+        }
+    });
+    if (container) resizeObserver.observe(container);
+
+    function updateCanvasSizes() {
+        const mainCanvas = document.getElementById('graphCanvas');
+        const graphContainer = mainCanvas.parentElement;
+        if (graphContainer && graphContainer.offsetParent !== null && graphContainer.clientWidth > 0) {
+            const containerWidth = graphContainer.clientWidth - 20;
+            const aspectRatio = 650 / 300;
+            const canvasWidth = Math.max(100, Math.floor(containerWidth));
+            const canvasHeight = Math.max(50, Math.floor(canvasWidth / aspectRatio));
+            if(mainCanvas.width !== canvasWidth || mainCanvas.height !== canvasHeight){
+                mainCanvas.width = canvasWidth;
+                mainCanvas.height = canvasHeight;
+                drawGraph();
+            }
+        }
+    }
+
+    // --- Helpers & Factors ---
+    function getRemainingSubstrateCount() { return molecules.filter(m => m.type === 'substrate' && m.el && m.el.parentNode).length; }
+    function tempSpeedFactor(T) { const temp = Number(T); if (isNaN(temp) || temp <= 0) return 0.1; const referenceTemp = 37.0; const baseSpeedFactor = 3.0; return Math.max(0.1, (temp / referenceTemp) * baseSpeedFactor); }
+    function enzymeActivityFactor(T) { const Tnum = Number(T); if (isNaN(Tnum)) return 0.1; const Tmin = 0; const Topt = 37; const Tmax = 50; const baseActivity = 0.1; if (Tnum <= Tmin) { return baseActivity; } else if (Tnum < Topt) { return baseActivity + (1.0 - baseActivity) * (Tnum - Tmin) / (Topt - Tmin); } else if (Tnum === Topt) { return 1.0; } else if (Tnum < Tmax) { return 1.0 * (Tmax - Tnum) / (Tmax - Topt); } else { return 0; } }
+    function phFactor(pH) {
+        const optimumPh = 9;
+        const lowerBound = 5;
+        const upperBound = 11;
+        const gaussianRange = 2;
+        if (pH < lowerBound || pH > upperBound) {
+            return 0.0;
+        } else {
+            return Math.max(0, Math.exp(-((pH - optimumPh) ** 2) / (2 * (gaussianRange / 1.5) ** 2)));
+        }
+    }
+
+    // --- Theoretical Calculations ---
+    function calcRate(eVal, sValInput, TVal, pHVal) {
+        const activityF = enzymeActivityFactor(TVal);
+        const phF = phFactor(pHVal);
+        let effectiveE_relative = (eVal / 100) * activityF * phF;
+        let Vmax_potential = Vmax_base_rate * effectiveE_relative;
+        let Km_app = Km_equiv; // Simplified: No competitive inhibitor
+        let Vmax_app = Vmax_potential; // Simplified: No non-competitive inhibitor
+        let denominator = Km_app + sValInput;
+        if (denominator <= 0 || sValInput < 1e-9 || phF === 0) return 0;
+        let initialRate = Vmax_app * sValInput / denominator;
+        const finalRate = Math.max(0, initialRate);
+        if (!isFinite(finalRate)) { console.error("calcRate non-finite!"); return 0; }
+        return finalRate;
+    }
+
+    function calculateTheoreticalParams(eVal, sValInput, TVal, pHVal) {
+        let initialRate = calcRate(eVal, sValInput, TVal, pHVal);
+        theoreticalMaxO2 = Math.max(1.0, (initialRate > 0.1 ? (initialRate * 15 + sValInput * 0.5) : sValInput * 0.5));
+        if (theoreticalMaxO2 > 0.1 && initialRate > 0) {
+            theoreticalKappa = initialRate / theoreticalMaxO2;
+        } else {
+            theoreticalKappa = 0.01;
+        }
+        theoreticalKappa = Math.max(0.001, theoreticalKappa);
+    }
+
+    // --- UI Interaction ---
+    function sliderChange(varName, spanId) {
+        const input = document.getElementById(varName + 'Input');
+        const val = parseFloat(input.value);
+        let displayVal = (varName === 'ph') ? val.toFixed(1) : val.toString();
+        document.getElementById(spanId).textContent = displayVal;
+        if (!running) setupScene();
+    }
+
+    // --- Simulation Setup ---
+    function setupScene() {
+        if (container) { containerW = container.clientWidth; containerH = container.clientHeight; container.innerHTML = ""; }
+        molecules = []; enzymes = []; slope = 0; slopeLabelText = "";
+        const getSliderValue = (id) => parseFloat(document.getElementById(id)?.value || 0);
+        let eVal = getSliderValue('enzymeInput');
+        let sValInput = getSliderValue('substrateInput');
+        let TVal = getSliderValue('tempInput');
+        let pHVal = getSliderValue('phInput');
+
+        calculateTheoreticalParams(eVal, sValInput, TVal, pHVal);
+
+        let eCount = eVal > 0 ? Math.min(60, Math.max(1, Math.floor(eVal / 1.8))) : 0;
+        let subCount = sValInput > 0 ? Math.min(400, Math.max(5, Math.floor(sValInput * 1.0))) : 0;
+        let tempActivityFactor = enzymeActivityFactor(TVal);
+        const optimumPh = 9;
+        const lowerPhLimit = 5;
+        const upperPhLimit = 11;
+
+        for (let i = 0; i < eCount; i++) {
+            let enz = createEnzymeObj();
+            let denaturedByTemp = (TVal > 37 && seededRandom() < (1 - tempActivityFactor));
+            let denaturedByPh = false;
+            if (pHVal < lowerPhLimit || pHVal > upperPhLimit) {
+                denaturedByPh = true;
+            } else if (pHVal !== optimumPh) {
+                let distanceFromOpt = Math.abs(pHVal - optimumPh);
+                let maxDistance = Math.max(optimumPh - lowerPhLimit, upperPhLimit - optimumPh);
+                if (maxDistance > 0 && seededRandom() < Math.min(1, distanceFromOpt / maxDistance)) {
+                    denaturedByPh = true;
+                }
+            }
+            if (denaturedByTemp || denaturedByPh) {
+                enz.denatured = true;
+                enz.el.classList.add('denatured');
+            }
+            if (container) container.appendChild(enz.el);
+            enzymes.push(enz);
+        }
+        for (let i = 0; i < subCount; i++) { let sb = createMolObj('substrate'); if (container) container.appendChild(sb.el); molecules.push(sb); }
+        drawGraph();
+    }
+
+    function createEnzymeObj() { let el = document.createElement('div'); el.className = 'enzyme'; let size = 40; let x = seededRandom() * (containerW - size); let y = seededRandom() * (containerH - size); el.style.left = x + 'px'; el.style.top = y + 'px'; return { el, x, y, vx: 0, vy: 0, denatured: false, size }; }
+    function createMolObj(type) { let el = document.createElement('div'); let w = 0, h = 0, size = 0; if (type === 'substrate') { el.className = 'triangle substrate'; w = 18; h = 16; size = 16; } else if (type === 'product') { el.className = 'product'; w = 8; h = 8; size = 8; } let x = seededRandom() * (containerW - w); let y = seededRandom() * (containerH - h); el.style.left = x + 'px'; el.style.top = y + 'px'; return { type, el, x, y, vx: 0, vy: 0, w, h, size }; }
+
+    // --- Simulation Control ---
+    function generateResults() {
+        if (running) { alert("Simulation already running!"); return; }
+        running = true;
+        lockControls(true);
+        resultsData = [];
+        document.getElementById('resultsTable').innerHTML = "";
+        timeIndex = 0; o2Cumulative = 0; lastO2Value = 0; slope = 0; slopeLabelText = "";
+        totalProducts = 0; finalO2Cumulative = -1; lastTheoreticalO2 = 0; lastO2Cumulative = 0;
+
+        const getSliderValue = (id) => parseFloat(document.getElementById(id)?.value || 0);
+        let eVal = getSliderValue('enzymeInput');
+        let sValInput = getSliderValue('substrateInput');
+        let TVal = getSliderValue('tempInput');
+        let pHVal = getSliderValue('phInput');
+
+        let newSeed = eVal * 100000 + sValInput * 1000 + TVal * 10000 + pHVal * 1000000 + Date.now();
+        setSeed(newSeed);
+
+        calculateTheoreticalParams(eVal, sValInput, TVal, pHVal);
+        setupScene();
+        experimentStartTime = Date.now();
+        let activeEnzymes = enzymes.filter(e => !e.denatured);
+        let initialSubstrateCount = molecules.filter(m => m.type === 'substrate').length;
+        reactionPossible = (activeEnzymes.length > 0 && initialSubstrateCount > 0 && calcRate(eVal, sValInput, TVal, pHVal) > 1e-9);
+
+        if (!reactionPossible) {
+             if (phFactor(pHVal) === 0.0) {
+                 slopeLabelText = "Initial rate: 0.0 ppm/s (pH out of range)";
+             } else {
+                 slopeLabelText = "Initial rate: 0.0 ppm/s (No Reaction)";
+             }
+        }
+
+        let speed = tempSpeedFactor(TVal);
+        for (let e of enzymes) { let enzymeSpeedMultiplier = e.denatured ? 0.2 : 1.0; e.vx = (seededRandom() - 0.5) * 0.4 * speed * enzymeSpeedMultiplier; e.vy = (seededRandom() - 0.5) * 0.4 * speed * enzymeSpeedMultiplier; }
+        for (let m of molecules) { if (m.type === 'product') continue; let baseSpeed = 1.0 * speed + (seededRandom() * 0.5 * speed); m.vx = (seededRandom() - 0.5) * baseSpeed; m.vy = (seededRandom() - 0.5) * baseSpeed; }
+
+        startAnimationLoop();
+        addTimeRow(0);
+        experimentInterval = setInterval(() => {
+            timeIndex++;
+            let simTime = timeIndex * 0.5;
+            addTimeRow(simTime);
+            if (timeIndex >= 60) stopSimulation();
+        }, 83);
+    }
+
+    function lockControls(disable) {
+        ['enzyme', 'substrate', 'temp', 'ph'].forEach(id => {
+            const input = document.getElementById(id + 'Input');
+            if(input) input.disabled = disable;
+        });
+        document.getElementById('genBtn').disabled = disable;
+        document.getElementById('csvBtn').disabled = disable;
+    }
+
+    function startAnimationLoop() { if (animFrameId) cancelAnimationFrame(animFrameId); function loop() { if (!running) return; tick(); animFrameId = requestAnimationFrame(loop); } animFrameId = requestAnimationFrame(loop); }
+    function stopAnimationLoop() { if (animFrameId) cancelAnimationFrame(animFrameId); animFrameId = null; }
+
+    function tick() {
+        let activeEnzymesThisTick = [];
+        for (let e of enzymes) {
+            let speedMultiplier = e.denatured ? 0.2 : 1.0;
+            e.x += e.vx * speedMultiplier; e.y += e.vy * speedMultiplier;
+            if (e.x < 0) { e.x = 0; e.vx *= -1; }
+            if (e.x > containerW - e.size) { e.x = containerW - e.size; e.vx *= -1; }
+            if (e.y < 0) { e.y = 0; e.vy *= -1; }
+            if (e.y > containerH - e.size) { e.y = containerH - e.size; e.vy *= -1; }
+            e.el.style.left = e.x + 'px'; e.el.style.top = e.y + 'px';
+            if (!e.denatured) { activeEnzymesThisTick.push(e); }
+        }
+        for (let i = molecules.length - 1; i >= 0; i--) {
+            let m = molecules[i];
+            if (!m || !m.el) continue;
+            let speedMultiplier = (m.type === 'product') ? 0.5 : 1.0;
+            m.x += m.vx * speedMultiplier; m.y += m.vy * speedMultiplier;
+            if (m.x < 0) { m.x = 0; m.vx *= -1; }
+            if (m.x > containerW - m.w) { m.x = containerW - m.w; m.vx *= -1; }
+            if (m.y < 0) { m.y = 0; m.vy *= -1; }
+            if (m.y > containerH - m.h) { m.y = containerH - m.h; m.vy *= -1; }
+            m.el.style.left = m.x + 'px'; m.el.style.top = m.y + 'px';
+            if (m.type === 'substrate' && reactionPossible && activeEnzymesThisTick.length > 0) {
+                for (let eObj of activeEnzymesThisTick) {
+                    if (m.x < eObj.x + eObj.size && m.x + m.w > eObj.x && m.y < eObj.y + eObj.size && m.y + m.h > eObj.y) {
+                        let dx = (m.x + m.w / 2) - (eObj.x + eObj.size / 2);
+                        let dy = (m.y + m.h / 2) - (eObj.y + eObj.size / 2);
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        let collisionThreshold = (eObj.size / 2) + (m.size / 2) - 2;
+                        if (dist < collisionThreshold) {
+                            handleCollision(m, i, eObj);
+                            if (!molecules[i] || molecules[i] !== m) break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function handleCollision(m, moleculeIndex, eObj) {
+        highlight(eObj);
+        if (eObj.denatured) return;
+        // Simplified: only substrate collisions matter
+        const pHVal = parseFloat(document.getElementById('phInput')?.value || 9);
+        const currentPhFactor = phFactor(pHVal);
+        if (seededRandom() < currentPhFactor) {
+            o2Cumulative++;
+            produceProducts(m.x + m.w / 2, m.y + m.h / 2);
+            if (m.el && m.el.parentNode) m.el.parentNode.removeChild(m.el);
+            molecules.splice(moleculeIndex, 1);
+        } else {
+            m.vx *= -1;
+            m.vy *= -1;
+        }
+    }
+
+    function produceProducts(x, y) { totalProducts++; let p = createMolObj('product'); p.x = x - p.w / 2; p.y = y - p.h / 2; p.vx = (seededRandom() - 0.5) * 0.5; p.vy = (seededRandom() - 0.5) * 0.5; if (container) container.appendChild(p.el); molecules.push(p); }
+    function highlight(eObj) { eObj.el.classList.add('highlight-collision'); setTimeout(() => { if(eObj && eObj.el) eObj.el.classList.remove('highlight-collision'); }, 150); }
+
+    function addTimeRow(timeS) {
+        let rawTrials = [0, 0, 0, 0, 0];
+        let finalMean = 0;
+        let perfectReading = 0;
+        let currentTheoreticalO2 = 0;
+        const regressionTimeLimit = 1.0;
+        if (timeS > 0 && theoreticalMaxO2 > 0 && theoreticalKappa > 0) {
+            currentTheoreticalO2 = theoreticalMaxO2 * (1 - Math.exp(-theoreticalKappa * timeS));
+            currentTheoreticalO2 = Math.max(0, currentTheoreticalO2);
+        }
+        if (timeS === 0) {
+            finalMean = 0; lastO2Value = 0; finalO2Cumulative = -1; lastTheoreticalO2 = 0; lastO2Cumulative = 0; rawTrials.fill(0);
+        } else if (!reactionPossible) {
+            finalMean = 0; lastO2Value = 0; finalO2Cumulative = 0; perfectReading = 0; rawTrials.fill(0);
+        } else if (timeS <= regressionTimeLimit) {
+            let theoreticalO2 = theoreticalMaxO2 * (1 - Math.exp(-theoreticalKappa * timeS));
+            let smallNoise = (seededRandom() - 0.5) * 0.5;
+            finalMean = Math.max(0, theoreticalO2 + smallNoise);
+            rawTrials = rawTrials.map(() => finalMean + (seededRandom() - 0.5) * 0.1);
+        } else {
+            if (finalO2Cumulative >= 0) {
+                perfectReading = finalO2Cumulative;
+            } else if (currentTheoreticalO2 >= theoreticalMaxO2 * 0.995 && timeIndex > 1) {
+                finalO2Cumulative = theoreticalMaxO2;
+                perfectReading = finalO2Cumulative;
+            } else {
+                perfectReading = currentTheoreticalO2;
+            }
+            let noiseAmplitude = perfectReading * 0.05 + 1;
+            let deviationFactor = 0;
+            let deltaCollisions = o2Cumulative - lastO2Cumulative;
+            let deltaTheoretical = currentTheoreticalO2 - lastTheoreticalO2;
+            if (deltaTheoretical > 0.1) { deviationFactor = (deltaCollisions / deltaTheoretical) - 1; }
+            else if (deltaCollisions > 0) { deviationFactor = 0.5; }
+            deviationFactor = Math.max(-0.8, Math.min(0.8, deviationFactor));
+            let sum = 0;
+            for (let i = 0; i < 5; i++) {
+                let deviationOffset = deviationFactor * noiseAmplitude * 0.6;
+                let randomOffset = (seededRandom() - 0.5) * 2 * noiseAmplitude * 0.4;
+                let val = Math.max(0, perfectReading + deviationOffset + randomOffset);
+                if (finalO2Cumulative >= 0) { val = Math.max(0, finalO2Cumulative + deviationOffset + randomOffset); }
+                rawTrials[i] = val;
+                sum += val;
+            }
+            finalMean = sum / rawTrials.length;
+            finalMean = Math.max(0, finalMean);
+        }
+        lastTheoreticalO2 = currentTheoreticalO2;
+        lastO2Cumulative = o2Cumulative;
+        lastO2Value = finalMean;
+        resultsData.push({ time: timeS, trials: rawTrials, mean: finalMean });
+        let tb = document.getElementById('resultsTable');
+        if (tb) { let tr = document.createElement('tr'); tr.innerHTML = `<td>${timeS.toFixed(1)}</td>` + rawTrials.map(v => `<td>${v.toFixed(2)}</td>`).join('') + `<td>${finalMean.toFixed(2)}</td>`; tb.appendChild(tr); }
+        drawGraph();
+    }
+
+    function stopSimulation(immediate = false) {
+        if (!running && !immediate) return;
+        stopAnimationLoop();
+        if (experimentInterval) clearInterval(experimentInterval);
+        experimentInterval = null;
+
+        if (running || immediate) {
+            running = false;
+            lockControls(false);
+
+            if (!immediate && reactionPossible) {
+                computeInitialSlope();
+            } else if (!immediate) {
+                slope = 0;
+                if (!slopeLabelText) {
+                    const pHVal = parseFloat(document.getElementById('phInput')?.value || 9);
+                    if (phFactor(pHVal) === 0.0) {
+                        slopeLabelText = "Initial rate: 0.0 ppm/s (pH out of range)";
+                    } else {
+                        slopeLabelText = "Initial rate: ~0.0 ppm/s";
+                    }
+                }
+            }
+            if (!immediate) drawGraph();
+        }
+    }
+
+    function resetExperiment() {
+        stopSimulation(true);
+        resultsData = [];
+        o2Cumulative = 0;
+        lastO2Value = 0;
+        slope = 0;
+        reactionPossible = true;
+        finalO2Cumulative = -1;
+        totalProducts = 0;
+        slopeLabelText = "";
+        lastTheoreticalO2 = 0;
+        lastO2Cumulative = 0;
+        theoreticalMaxO2 = 0;
+        theoreticalKappa = 0.01;
+        document.getElementById('resultsTable').innerHTML = "";
+        if (container) container.innerHTML = "";
+        enzymes = [];
+        molecules = [];
+        setupScene();
+        drawGraph();
+        updateCanvasSizes();
+    }
+
+    function exportToCSV() {
+        if (resultsData.length === 0) {
+            alert("No raw data to export.");
+            return;
+        }
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+        let filename = `catalase_kinetics_${timestamp}.csv`;
+        let csv = "Time(s),Trial1(ppm),Trial2(ppm),Trial3(ppm),Trial4(ppm),Trial5(ppm),Mean(ppm)\n";
+        for (let r of resultsData) {
+            let arr = [r.time.toFixed(1), ...r.trials.map(t => t.toFixed(2)), r.mean.toFixed(2)];
+            csv += arr.join(",") + "\n";
+        }
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function computeInitialSlope() {
+        slope = 0;
+        slopeLabelText = "Initial rate: Calculating...";
+        const regressionTimeLimit = 1.0;
+        let pointsForRegression = resultsData.filter(p => p.time > 0 && p.time <= regressionTimeLimit && p.mean >= 0);
+        pointsForRegression.unshift({ time: 0, mean: 0 });
+        let n = pointsForRegression.length;
+        if (n >= 2) {
+            let sum_x = 0, sum_y = 0, sum_xy = 0, sum_x_squared = 0;
+            for (let point of pointsForRegression) {
+                sum_x += point.time;
+                sum_y += point.mean;
+                sum_xy += point.time * point.mean;
+                sum_x_squared += point.time * point.time;
+            }
+            let denominator = (n * sum_x_squared - sum_x * sum_x);
+            if (Math.abs(denominator) > 1e-9) {
+                slope = (n * sum_xy - sum_x * sum_y) / denominator;
+                slope = Math.max(0, slope);
+                slopeLabelText = `Initial rate: ${slope.toFixed(3)} ppm/s`;
+            } else {
+                slope = 0;
+                slopeLabelText = "Initial rate: ~0.0 ppm/s (Flat)";
+            }
+        } else {
+            slope = 0;
+            slopeLabelText = "Initial rate: Too few points";
+        }
+    }
+
+    function drawGraph() {
+        const canvas = document.getElementById('graphCanvas');
+        if (!canvas || !canvas.getContext) return;
+        const ctx = canvas.getContext('2d');
+        const padding = 40;
+        const graphWidth = canvas.width - 2 * padding;
+        const graphHeight = canvas.height - 2 * padding;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f9fafb";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const maxTime = 30;
+        let maxMean = 1;
+        if (Array.isArray(resultsData) && resultsData.length > 0) {
+            maxMean = Math.max(1, ...resultsData.map(r => r.mean)) * 1.1;
+        } else if (theoreticalMaxO2 > 0) {
+             maxMean = Math.max(1, theoreticalMaxO2) * 1.1;
+        }
+        // Y Axis
+        ctx.strokeStyle = "#d1d5db"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padding, padding); ctx.lineTo(padding, canvas.height - padding); ctx.stroke();
+        ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        const numYTicks = 5;
+        for (let i = 0; i <= numYTicks; i++) {
+            let yVal = (maxMean / numYTicks) * i;
+            let y = (canvas.height - padding) - (yVal / maxMean) * graphHeight;
+            ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(padding - 5, y); ctx.stroke();
+            let yLabel = yVal < 1 ? yVal.toFixed(1) : Math.round(yVal).toString();
+            ctx.fillStyle = "#6b7280"; ctx.font = "11px 'Inter', sans-serif"; ctx.fillText(yLabel, padding - 8, y);
+        }
+        ctx.save(); ctx.translate(5, canvas.height / 2); ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center"; ctx.fillStyle = "#374151"; ctx.font = "bold 12px 'Inter', sans-serif";
+        ctx.fillText("Mean O₂ (ppm)", 0, 0); ctx.restore();
+        // X Axis
+        ctx.beginPath(); ctx.moveTo(padding, canvas.height - padding); ctx.lineTo(canvas.width - padding, canvas.height - padding); ctx.stroke();
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
+        for (let t = 0; t <= maxTime; t += 5) {
+            let x = padding + (t / maxTime) * graphWidth;
+            ctx.beginPath(); ctx.moveTo(x, canvas.height - padding); ctx.lineTo(x, canvas.height - padding + 5); ctx.stroke();
+            ctx.fillStyle = "#6b7280"; ctx.font = "11px 'Inter', sans-serif"; ctx.fillText(t.toString(), x, canvas.height - padding + 8);
+        }
+        ctx.fillStyle = "#374151"; ctx.font = "bold 12px 'Inter', sans-serif";
+        ctx.fillText("Time (s)", canvas.width / 2, canvas.height - padding + 25);
+        // Plot Data Points
+        if (Array.isArray(resultsData) && resultsData.length > 0) {
+            ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
+            ctx.beginPath();
+            let firstPoint = true;
+            resultsData.forEach((r) => {
+                if (r && typeof r.mean === 'number' && typeof r.time === 'number') {
+                    let x = padding + (r.time / maxTime) * graphWidth;
+                    let y = (canvas.height - padding) - (Math.max(0, Math.min(r.mean, maxMean)) / maxMean) * graphHeight;
+                    if (isFinite(x) && isFinite(y)) {
+                        if (firstPoint) { ctx.moveTo(x, y); firstPoint = false; } else { ctx.lineTo(x, y); }
+                    }
+                }
+            });
+            if (!firstPoint) ctx.stroke();
+            ctx.fillStyle = "#f97316";
+            resultsData.forEach(r => {
+                if (r && typeof r.mean === 'number' && typeof r.time === 'number') {
+                    let x = padding + (r.time / maxTime) * graphWidth;
+                    let y = (canvas.height - padding) - (Math.max(0, Math.min(r.mean, maxMean)) / maxMean) * graphHeight;
+                    if (isFinite(x) && isFinite(y)) { ctx.beginPath(); ctx.arc(x, y, 3, 0, 2 * Math.PI); ctx.fill(); }
+                }
+            });
+        }
+        // Draw Initial Slope Line and Label
+        if (slopeLabelText && !running) {
+             if (slope > 1e-6) {
+                ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 3.0; ctx.setLineDash([6, 4]); ctx.beginPath();
+                let startX = padding; let startY = canvas.height - padding;
+                let tangentDuration = 10.0;
+                let endTime = tangentDuration;
+                let yValAtEnd = slope * tangentDuration;
+                let endX = padding + (endTime / maxTime) * graphWidth;
+                let clampedYVal = Math.max(0, Math.min(yValAtEnd, maxMean));
+                let endY = (canvas.height - padding) - (clampedYVal / maxMean) * graphHeight;
+                if (yValAtEnd >= maxMean && slope > 1e-9) { endX = padding + ((maxMean / slope) / maxTime) * graphWidth; endY = padding; }
+                if (isFinite(endX) && isFinite(endY) && (Math.abs(endX - startX) > 1 || Math.abs(endY - startY) > 1)) { ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke(); }
+                ctx.setLineDash([]);
+            }
+            ctx.fillStyle = "#ef4444"; ctx.font = "bold 12px 'Inter', sans-serif"; ctx.textAlign = "left";
+            ctx.textBaseline = "top"; ctx.fillText(slopeLabelText, padding + 5, padding + 5);
+        }
+    }
+
+    function handleSliderKeyDown(event) {
+        const key = event.key;
+        if ((key === '+' || key === '=' || key === '-') && isHoveringInputBox && currentlyHoveredSlider && !currentlyHoveredSlider.disabled) {
+            event.preventDefault();
+            const slider = currentlyHoveredSlider;
+            let stepChange = (key === '+' || key === '=') ? 1 : -1;
+            const step = parseFloat(slider.step) || 1;
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            let newValue = parseFloat(slider.value) + (stepChange * step);
+            newValue = Math.max(min, Math.min(max, newValue));
+            const stepString = String(step);
+            const decimalPlaces = stepString.includes('.') ? stepString.split('.')[1].length : 0;
+            if (decimalPlaces > 0) { newValue = parseFloat(newValue.toFixed(decimalPlaces)); }
+            slider.value = newValue;
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+        } else if (key === 'Enter') {
+            const genBtn = document.getElementById('genBtn');
+            if (genBtn && !genBtn.disabled) {
+                event.preventDefault();
+                generateResults();
+            }
+        }
+    }
+
+    window.addEventListener('load', () => {
+        setupScene();
+        updateCanvasSizes();
+        drawGraph();
+        const inputBoxes = document.querySelectorAll('.input-box');
+        inputBoxes.forEach(box => {
+            const slider = box.querySelector('input[type="range"]');
+            if (slider) {
+                box.addEventListener('mouseenter', () => { if (!slider.disabled) { currentlyHoveredSlider = slider; isHoveringInputBox = true; box.classList.add('keyboard-active'); } });
+                box.addEventListener('mouseleave', () => { if (currentlyHoveredSlider === slider) { currentlyHoveredSlider = null; isHoveringInputBox = false; } box.classList.remove('keyboard-active'); });
+            }
+        });
+        document.addEventListener('keydown', handleSliderKeyDown);
+    });
+    window.addEventListener('resize', () => { updateCanvasSizes(); });
+
+</script>
+</body>
+</html>
